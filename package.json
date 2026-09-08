@@ -1,0 +1,21 @@
+{
+  "name": "whatsapp-backup-tool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "One-shot WhatsApp Web exporter: group rejoin playbook, then recent chat text.",
+  "main": "export.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node export.js",
+    "postinstall": "patch-package"
+  },
+  "dependencies": {
+    "qrcode-terminal": "0.12.0",
+    "whatsapp-web.js": "1.34.7"
+  },
+  "devDependencies": {
+    "patch-package": "8.0.1"
+  }
+}

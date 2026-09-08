@@ -141,4 +141,11 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# macOS
 .DS_Store
+
+# WhatsApp export output and session (private messages + live token)
+export/
+.wwebjs_auth/
+.wwebjs_cache/
