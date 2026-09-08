@@ -1,0 +1,60 @@
+Instructions to automate the export of all messages from all chats/groups/etc in a WhatsApp account
+
+1. Setup
+mkdir wa-exporter && cd wa-exporter
+npm init -y
+npm install whatsapp-web.js qrcode-terminal
+
+2. export.js file
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
+const fs = require('fs');
+const path = require('path');
+
+const outputDir = path.join(__dirname, 'exported_chats');
+if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir);
+
+const client = new Client({
+    authStrategy: new LocalAuth(),
+    puppeteer: { headless: true, args: ['--no-sandbox'] }
+});
+
+client.on('qr', qr => {
+    console.log('Scan this QR code with your son\'s WhatsApp (Linked Devices):');
+    qrcode.generate(qr, { small: true });
+});
+
+client.on('ready', async () => {
+    console.log('Client is authenticated and ready. Fetching chats...');
+    const chats = await client.getChats();
+    console.log(`Found ${chats.length} conversations. Exporting...`);
+
+    for (const chat of chats) {
+        const sanitizedName = (chat.name || chat.id.user).replace(/[/\\?%*:|"<>]/g, '_');
+        const filename = path.join(outputDir, `${sanitizedName}_${chat.isGroup ? 'GROUP' : 'DIRECT'}.txt`);
+
+        console.log(`Dumping: ${chat.name || chat.id.user}`);
+
+        // Fetch up to 10,000 messages (adjust limit as needed, Infinity fetches all)
+        const messages = await chat.fetchMessages({ limit: 5000 });
+       
+        const content = messages.map(m => {
+            const date = new Date(m.timestamp * 1000).toISOString();
+            const sender = m.fromMe ? 'Me' : (m._data.notifyName || m.author || m.from);
+            return `[${date}] ${sender}: ${m.body || (m.hasMedia ? `[MEDIA: ${m.type}]` : '')}`;
+        }).join('\n');
+
+        fs.writeFileSync(filename, content, 'utf8');
+    }
+
+    console.log(`\nAll chats successfully exported to ${outputDir}`);
+    await client.destroy();
+    process.exit(0);
+});
+
+client.initialize();
+
+3. Run init
+
+node export.js
+Open WhatsApp on the phone $\rightarrow$ Linked Devices $\rightarrow$ scan the terminal QR code. The script iterates through direct messages and groups, saving formatted text transcripts with timestamps and sender names.
